@@ -1,4 +1,4 @@
-# pervade
+#Pervade
 Automatic e-book formatter for Wildbow's online serial, Worm.
 
 ###Basic usage:
@@ -30,3 +30,7 @@ optional arguments:
   -v, --verbose         display more verbose output for debugging
   -x, --debug           display only errors and debugging messages
 ```
+
+***
+
+*Justice Shall Pervade*
