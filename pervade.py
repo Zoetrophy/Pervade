@@ -49,7 +49,7 @@ class Constant:
 class RTF:
     header = '{\\rtf1\\deflang1033\\plain\\fs28\\widowctrl\\hyphauto\\ftnbj' \
              '\\margt2160\\margb2160\\margl1440\\margr1440 ' \
-             '{\\fonttbl {\\f0 Times New Roman;}{\\f1 Arial;}{\\f2 Courier;}}\n'
+             '{\\fonttbl {\\f0 Times New Roman;}{\\f1 Arial;}{\\f2 Courier;}{\\f3 Arial;}}\n'
     prefix = '{\\pard\\sl360\\slmult1'
     suffix = '\\par}\n'
     indent = 360
@@ -60,19 +60,19 @@ class RTF:
         [r'(<strong>)|(<b>)', r'\\b '],
         [r'(</strong>)|(</b>)', r'\\b0 '],
         [r'((<br/>)|(<br />)|(<br>))', r'\\line\n'],
-        [r'(<span style="text-decoration:underline;">)', r'\\ul '],
-        [r'(</span>)', r'\\ul0 '],
         [r'((<p)|(</p)).*?(>)', r''],
         [r'((<a)|(</a)).*?(>)', r''],
         [r'(<del>).*?(</del>)', r''],
         [r'((<del)|(</del)|(<del/)).*?(>)', r''],
         [r'(<em/>)|(<i/>)', r''],
-        [r'(<strong/>)|(<b/>)', r''],
-
+        [r'(<strong/>)|(<b/>)', r'']
+    ]
+    character_substitutions = [
         [r'(&#160;)', r'\\~'],
         [r'(&#199;)', r'Ç'],
         [r'(&#220;)', r'Ü'],
         [r'(&#233;)', r'é'],
+        ['r(&#237;)', r'í'],
         [r'(&#246;)', r'ö'],
         [r'(&#8211;)', r'\\endash '],
         [r'(&#8212;)', r'\\emdash '],
@@ -80,11 +80,54 @@ class RTF:
         [r'(&#8217;)', r'\\rquote '],
         [r'(&#8220;)', r'\\ldblquote '],
         [r'(&#8221;)', r'\\rdblquote '],
+        [r'(&#8226;)', r'•'],
         [r'(&#8230;)', r'...'],
-        [r'(&#9632;)', r'\\bullet']
+        [r'(&#9632;)', r'■'],
+        [r'(&#9658;)', r'►'],
+        [r'(&#9791;)', r'☿'],
+        [r'(&#9830;)', r'♦'],
+        [r'(&#128521;)', r'😉'],
+        [r'(&#128550;)', r'😦']
+    ]
+    special_substitutions = [
+        [[r'<span style="text-decoration:underline;">', r'</span>'], [r'\\ul ', r'\\ul0 ']],
+        [[r'<span style="color:#ffffff;">', r'</span>'], [r'', r'']]
     ]
     author_name = 'JOHN McCRAE'
     author_nickname = 'WILDBOW'
+    per_chapter_formatting = {
+        1: {},
+        2: {},
+        3: {},
+        4: {},
+        5: {},
+        6: {},
+        7: {},
+        8: {},
+        9: {},
+        10: {},
+        11: {},
+        12: {},
+        13: {},
+        14: {},
+        15: {},
+        16: {},
+        17: {},
+        18: {},
+        19: {9: {'typeface': 3, 'font_size': 28, 'alignment': 'l', 'indent': 0, 'space_after': 360}},
+        20: {},
+        21: {},
+        22: {},
+        23: {},
+        24: {},
+        25: {},
+        26: {},
+        27: {},
+        28: {},
+        29: {},
+        30: {},
+        31: {}
+    }
 
 
 def intro_message():
@@ -215,11 +258,22 @@ def get_index():
 
 
 def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_title, chapter_position):
-    def rich_textify(input_string):
+    def rich_textify(input_string, typeface=0, font_size=0, alignment='j', indent=1, space_after=False):
         output_string = input_string
+        output_string_prefix = RTF.prefix
+        output_string_suffix = RTF.suffix
 
         for substitution in RTF.substitutions:
             output_string = re.sub(substitution[0], substitution[1], output_string)
+        for substitution in RTF.character_substitutions:
+            output_string = re.sub(substitution[0], substitution[1], output_string)
+
+        for substitution in RTF.special_substitutions:
+            output_string = re.sub(
+                r'%s(.*?)%s' % (substitution[0][0], substitution[0][1]),
+                r'%s\1%s' % (substitution[1][0], substitution[1][1]),
+                output_string
+            )
 
         if re.sub(r'[^a-z]', r'', output_string.lower()) in ['lastchapter',
                                                              'nextchapter',
@@ -234,9 +288,12 @@ def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_titl
 
         output_string = ' ' * (output_string[0] != '\\') + output_string
 
-        css = re.search(r'style="(.+?)"', input_string)
+        css = re.search(r'p dir=".+?" style="(.+?)"', input_string)
         if css is None:
-            output_string = RTF.prefix + '\\qj\\fi' + str(RTF.indent) + output_string + RTF.suffix
+            output_string_prefix += ''.join([
+                '\\q' + alignment,
+                ('\\fi%d' % RTF.indent) * indent,
+            ])
         else:
             css_dict = {}
             for css_string in re.split(r';', css.group(1)):
@@ -247,7 +304,6 @@ def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_titl
                 print('DEBUG: %02d-%02d: css_dict = %s' % (arc_number, chapter_number, css_dict))
                 print('    %s' % input_string)
 
-            output_string_prefix = RTF.prefix
             if 'text-align' in css_dict.keys():
                 if css_dict['text-align'] == 'left':
                     output_string_prefix += '\\ql'
@@ -257,9 +313,14 @@ def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_titl
                     output_string_prefix += '\\qc'
             if 'padding-left' in css_dict.keys():
                 output_string_prefix += '\\li%d\\ri%d' % (RTF.padding, RTF.padding)
-            output_string = output_string_prefix + output_string + RTF.suffix
 
-        return output_string
+        output_string_prefix += ''.join([
+            ('\\f%d' % typeface) * (typeface != 0),
+            ('\\fs%d' % font_size) * (font_size != 0),
+            ('\\sa%d' % space_after) * (space_after != 0)
+        ])
+
+        return output_string_prefix + output_string + output_string_suffix
 
     chapter_tree = get_page(chapter_url)
     chapter_lines = chapter_tree.xpath('//*[@class="entry-content"]//p')
@@ -275,20 +336,18 @@ def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_titl
         if chapter_position == 1:
             chapter_file.write(RTF.header)
 
-    if chapter_position == 1:  # Empty header/footers is a hack to "fix" a bug. Please do not remove.
-        chapter_file.write('{\\headerl\\pard\\par}\n')
-        chapter_file.write('{\\headerr\\pard\\par}\n')
-        chapter_file.write('{\\headerf\\pard\\par}\n')
-        chapter_file.write('{\\footerl\\pard\\par}\n')
-        chapter_file.write('{\\footerr\\pard\\par}\n')
-        chapter_file.write('{\\footerf\\pard\\par}\n')
+    if chapter_position == 1:
+        # Empty header + footer is a hack to "fix" a bug. Please do not remove.
+        chapter_file.write('{\\header\\pard\\par}\n')
+        chapter_file.write('{\\footer\\pard\\par}\n')
         chapter_file.write('\\sectd')
         chapter_file.write('{\\pard\\sa180\\qc\\fs36\\par}\n')
-        chapter_file.write('{\\pard\\sa180\\qc\\fs72\\f1\\b %s\\b0\\par}\n' % arc_title.upper())
-        chapter_file.write('{\\pard\\sa180\\qc\\fs36\\f1%s\\par}\n' % ('\\line' * 20))
-        chapter_file.write('{\\pard\\sa120\\qc\\fs42\\f1\\b %s\\b0\\par}\n' % RTF.author_name)
-        chapter_file.write('{\\pard\\sa0\\qc\\fs28\\f1\\b %s\\b0\\par}\n' % RTF.author_nickname)
-        chapter_file.write('{\\pard\\qc\\page\\fs24\\f1 This page left intentionally blank.\\par}\n')
+        chapter_file.write('{\\pard\\sa180\\qc\\fs72\\f1\\b %s\\b0\\par}\n' % arc_title.upper())  # Prints BIG title
+        chapter_file.write('{\\pard\\sa180\\qc\\fs36\\f1%s\\par}\n' % ('\\line' * 20))  # Prints space
+        chapter_file.write('{\\pard\\sa120\\qc\\fs42\\f1\\b %s\\b0\\par}\n' % RTF.author_name)  # Prints author name
+        chapter_file.write('{\\pard\\sa0\\qc\\fs28\\f1\\b %s\\b0\\par}\n' % RTF.author_nickname)  # Prints author nick
+        chapter_file.write('{\\pard\\page\\par}')
+        chapter_file.write('{\\pard\\qc\\fs24\\f1 This page left intentionally blank.\\par}\n')
 
     # Set headers to current chapter + arc
     chapter_file.write('{\\headerl\\pard\\ql\\fs28\\f1\\line\\line %s\\par}\n' % (
@@ -312,9 +371,21 @@ def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_titl
         chapter_file.write('{\\pard\\sa120\\qc\\fs56\\f2\\b %s\\b0\\par}\n' % chapter_title_parts[0])
         chapter_file.write('{\\pard\\sa480\\qc\\fs28\\f2\\b %s\\b0\\par}\n' % chapter_title_parts[1])
 
+    # Convert HTML to RTF
     for raw_line in chapter_lines:
         line = etree.tostring(raw_line).decode('utf-8').strip()
-        rich_line = rich_textify(line)
+        if chapter_number not in RTF.per_chapter_formatting[arc_number].keys():
+            rich_line = rich_textify(line)
+        else:
+            chapter_formatting = RTF.per_chapter_formatting[arc_number][chapter_number]
+            rich_line = rich_textify(
+                line,
+                chapter_formatting['typeface'],
+                chapter_formatting['font_size'],
+                chapter_formatting['alignment'],
+                chapter_formatting['indent'],
+                chapter_formatting['space_after']
+            )
         chapter_file.write(rich_line)
 
     if not args.join:
@@ -324,12 +395,9 @@ def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_titl
             arc_identifier = 'ARC ' + str(arc_number)
         else:
             arc_identifier = 'WORM'
-        chapter_file.write('{\\headerl\\pard\\par}\n')
-        chapter_file.write('{\\headerr\\pard\\par}\n')
-        chapter_file.write('{\\headerf\\pard\\par}\n')
-        chapter_file.write('{\\footerl\\pard\\par}\n')
-        chapter_file.write('{\\footerr\\pard\\par}\n')
-        chapter_file.write('{\\footerf\\pard\\par}\n')
+        # "Empty header + footer is a hack to "fix" a bug. Please do not remove." Redux
+        chapter_file.write('{\\header\\pard\\par}\n')
+        chapter_file.write('{\\footer\\pard\\par}\n')
         chapter_file.write('\\sect\\sectd')
         chapter_file.write('{\\pard\\page\\par}\n')
         chapter_file.write('{\\pard\\qc\\f2\\b END OF %s\\b0\\par}\n}' % arc_identifier)
@@ -371,6 +439,7 @@ def main():
                 return
         else:
             selected_arcs = all_arcs
+
         for arc_number in selected_arcs:
             all_chapters = sorted([key for key in index[arc_number].keys() if isinstance(key, int)])
             if args.chapter is not None and (len(selected_arcs) == 1 or arc_number == selected_arcs[0]):
