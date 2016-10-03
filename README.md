@@ -14,7 +14,10 @@ Download set of arbitrary chapters `a`, `b`, `c` of arc `x`: `python3 pervade.py
 
 ###Help:
 
-Files can be converted faithfully to PDF with the command: `abiword --to=pdf *.rtf`
+Files can be converted faithfully to EPUB or PDF with the commands,  
+`abiword --to=epub *.rtf`  
+and  
+`abiword --to=pdf *.rtf`
 
 ***
 
