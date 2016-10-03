@@ -350,12 +350,26 @@ def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_titl
         chapter_file.write('{\\pard\\qc\\fs24\\f1 This page left intentionally blank.\\par}\n')
 
     # Set headers to current chapter + arc
+    chapter_title_parts = [part.strip() for part in re.split(r'\(|;|:|\)', chapter_title) if part != '']
     chapter_file.write('{\\headerl\\pard\\ql\\fs28\\f1\\line\\line %s\\par}\n' % (
         arc_title.upper()
     ))
-    chapter_file.write('{\\headerr\\pard\\qr\\fs28\\f1\\line\\line %s\\par}\n' % (
-        ('Chapter %s' % chapter_title.upper()).upper()
-    ))
+    if len(chapter_title_parts) == 1:
+        chapter_file.write('{\\headerr\\pard\\qr\\fs28\\f1\\line\\line %s\\par}\n' % (
+            ('Chapter %s' % chapter_title_parts[0]).upper()
+        ))
+    elif len(chapter_title_parts) == 2:
+        chapter_file.write('{\\headerr\\pard\\qr\\fs28\\f1\\line\\line %s\\par}\n' % (
+            ('%s (%s)' % (chapter_title_parts[0], chapter_title_parts[1])).upper()
+        ))
+    else:
+        chapter_file.write('{\\headerr\\pard\\qr\\fs28\\f1\\line\\line %s\\par}\n' % (
+            ('%s (%s; %s)' % (
+                chapter_title_parts[0],
+                chapter_title_parts[1].replace('Donation ', ''),
+                chapter_title_parts[2]
+            )).upper()
+        ))
     chapter_file.write('{\\headerf\\pard\\qc\\par}\n')
     chapter_file.write('{\\footerl\\pard\\ql\\fs28\\line\\chpgn\\par}\n')
     chapter_file.write('{\\footerr\\pard\\qr\\fs28\\line\\chpgn\\par}\n')
@@ -364,12 +378,17 @@ def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_titl
     # Start new sect(ion), print chapter heading
     chapter_file.write('\\sect\\sectd\n')
     chapter_file.write('{\\pard\\page\\par}\n')
-    chapter_title_parts = [part.strip() for part in re.split(r'\(|\)', chapter_title) if part != '']
-    if not len(chapter_title_parts) > 1:
+    if len(chapter_title_parts) == 1:
         chapter_file.write('{\\pard\\sa480\\qc\\fs56\\f2\\b %s\\b0\\par}\n' % chapter_title_parts[0])
-    else:
+    elif len(chapter_title_parts) == 2:
         chapter_file.write('{\\pard\\sa120\\qc\\fs56\\f2\\b %s\\b0\\par}\n' % chapter_title_parts[0])
         chapter_file.write('{\\pard\\sa480\\qc\\fs28\\f2\\b %s\\b0\\par}\n' % chapter_title_parts[1])
+    else:
+        chapter_file.write('{\\pard\\sa120\\qc\\fs56\\f2\\b %s\\b0\\par}\n' % chapter_title_parts[0])
+        chapter_file.write('{\\pard\\sa480\\qc\\fs28\\f2\\b %s; %s\\b0\\par}\n' % (
+            chapter_title_parts[1],
+            chapter_title_parts[2]
+        ))
 
     # Convert HTML to RTF
     for raw_line in chapter_lines:
