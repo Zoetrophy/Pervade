@@ -10,6 +10,19 @@ Download set of arbitrary arcs `x`, `y`, `z`: `python3 pervade.py -a x y z -j`
 Download individual chapter `a` of arc `x`: `python3 pervade.py -a x -c a`  
 Download set of arbitrary chapters `a`, `b`, `c` of arc `x`: `python3 pervade.py -a x -c a b c`
 
+***
+
+###Help:
+
+Files can be converted faithfully to PDF with the command: `abiword --to=pdf *.rtf`
+
+***
+
+###TODO:
+
+1. Identify all usages of <span> tag so that a catch-all can be added for all incidences that have no effect on formatting.
+
+***
 
 Output of `python3 pervade.py -h`:  
 ```
@@ -30,11 +43,6 @@ optional arguments:
   -v, --verbose         display more verbose output for debugging
   -x, --debug           display only errors and debugging messages
 ```
-
-***
-
-Files can be converted faithfully to PDF with the following command:  
-`abiword --to=pdf *.rtf`
 
 ***
 
