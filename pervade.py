@@ -72,12 +72,30 @@ class RTF:
         [r'(&#199;)', r'Ç'],
         [r'(&#220;)', r'Ü'],
         [r'(&#224;)', r'à'],
+        [r'(&#225;)', r'á'],
+        [r'(&#227;)', r'ã'],
         [r'(&#228;)', r'ä'],
+        [r'(&#232;)', r'è'],
         [r'(&#233;)', r'é'],
+        [r'(&#234;)', r'ê'],
+        [r'(&#235;)', r'ë'],
+        [r'(&#236;)', r'ì'],
         [r'(&#237;)', r'í'],
+        [r'(&#242;)', r'ò'],
+        [r'(&#245;)', r'õ'],
         [r'(&#246;)', r'ö'],
+        [r'(&#249;)', r'ù'],
+        [r'(&#250;)', r'ú'],
+        [r'(&#252;)', r'ü'],
+        [r'(&#257;)', r'ā'],
+        [r'(&#275;)', r'ē'],
+        [r'(&#283;)', r'ě'],
+        [r'(&#299;)', r'ī'],
         [r'(&#333;)', r'ō'],
+        [r'(&#363;)', r'ū'],
         [r'(&#462;)', r'ǎ'],
+        [r'(&#770;)', r'̂'],
+        [r'(&#772;)', r'̄'],
         [r'(&#8211;)', r'\\endash '],
         [r'(&#8212;)', r'\\emdash '],
         [r'(&#8216;)', r'\\lquote '],
@@ -289,6 +307,7 @@ def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_titl
 
         for character_code in re.findall(r'&#(.+?);', output_string):
             print('ERROR: unknown character code encountered <%s>' % character_code)
+            print('  %s' % input_string)
 
         output_string = ' ' * (output_string[0] != '\\') + output_string
 
@@ -349,7 +368,11 @@ def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_titl
         chapter_file.write('{\\footer\\pard\\par}\n')
         chapter_file.write('\\sectd')
         chapter_file.write('{\\pard\\sa180\\qc\\fs36\\par}\n')
-        chapter_file.write('{\\pard\\sa180\\qc\\fs72\\f1\\b %s\\b0\\par}\n' % arc_title.upper())  # Prints BIG title
+        chapter_file.write('{\\pard\\sa180\\qc\\fs72\\f1\\b %s\\b0\\par}\n' % re.sub(  # Prints BIG title
+            r'(\(.*?\))',
+            r'',
+            arc_title.upper()
+        ))
         chapter_file.write('{\\pard\\sa180\\qc\\fs36\\f1%s\\par}\n' % ('\\line' * 20))  # Prints space
         chapter_file.write('{\\pard\\sa120\\qc\\fs42\\f1\\b %s\\b0\\par}\n' % RTF.author_name)  # Prints author name
         chapter_file.write('{\\pard\\sa0\\qc\\fs28\\f1\\b %s\\b0\\par}\n' % RTF.author_nickname)  # Prints author nick
