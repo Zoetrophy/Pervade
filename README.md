@@ -33,4 +33,9 @@ optional arguments:
 
 ***
 
+Files can be converted faithfully to PDF with the following command:  
+`abiword --to=pdf *.rtf`
+
+***
+
 *Justice Shall Pervade*
