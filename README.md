@@ -1,8 +1,14 @@
 # pervade
 Automatic e-book formatter for Wildbow's online serial, Worm.
 
-Basic usage:  
-Download entire series: `python3 pervade.py`
+###Basic usage:
+
+Print index of series: `python3 pervade.py`  
+Download entire series: `python3 pervade.py -d`  
+Download individual arc `x`: `python3 pervade.py -a x -j`  
+Download set of arbitrary arcs `x`, `y`, `z`: `python3 pervade.py -a x y z -j`  
+Download individual chapter `a` of arc `x`: `python3 pervade.py -a x -c a`  
+Download set of arbitrary chapters `a b c` of arc `x`: `python3 pervade.py -a x -c a b c`
 
 
 Output of `python3 pervade.py -h`:  
