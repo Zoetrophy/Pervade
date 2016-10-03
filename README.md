@@ -20,14 +20,14 @@ Files can be converted faithfully to PDF with the command: `abiword --to=pdf *.r
 
 ###TODO:
 
-1. Identify all usages of <span> tag so that a catch-all can be added for all incidences that have no effect on formatting.
+1. Implement uniform chapter naming for Interludes.
 
 ***
 
 Output of `python3 pervade.py -h`:  
 ```
 usage: pervade.py [-h] [-a [ARC# [ARC# ...]]] [-c [CHAP# [CHAP# ...]]] [-d]
-                  [-j] [-s SECONDS] [-v] [-x]
+                  [-j] [-s SECONDS] [-f] [-v] [-x]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -40,6 +40,8 @@ optional arguments:
   -s SECONDS, --seconds SECONDS
                         time to wait after page load in seconds (automatically
                         fuzzed)
+  -f, --faithful        use original chapter titles instead of reformatted
+                        ones
   -v, --verbose         display more verbose output for debugging
   -x, --debug           display only errors and debugging messages
 ```
