@@ -5,7 +5,7 @@ Basic usage:
 Download entire series: `python3 pervade.py`
 
 
-Output of `python3 pervade.py`:  
+Output of `python3 pervade.py -h`:  
 ```
 usage: pervade.py [-h] [-a [ARC# [ARC# ...]]] [-c [CHAP# [CHAP# ...]]] [-d]
                   [-j] [-s SECONDS] [-v] [-x]
