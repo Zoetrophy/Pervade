@@ -71,9 +71,13 @@ class RTF:
         [r'(&#160;)', r'\\~'],
         [r'(&#199;)', r'Ç'],
         [r'(&#220;)', r'Ü'],
+        [r'(&#224;)', r'à'],
+        [r'(&#228;)', r'ä'],
         [r'(&#233;)', r'é'],
-        ['r(&#237;)', r'í'],
+        [r'(&#237;)', r'í'],
         [r'(&#246;)', r'ö'],
+        [r'(&#333;)', r'ō'],
+        [r'(&#462;)', r'ǎ'],
         [r'(&#8211;)', r'\\endash '],
         [r'(&#8212;)', r'\\emdash '],
         [r'(&#8216;)', r'\\lquote '],
@@ -329,7 +333,10 @@ def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_titl
         chapter_file = open(chapter_path, 'w')
         chapter_file.write(RTF.header)
     else:
-        chapter_path = '%s.rtf' % arc_title.replace(':', ' -')
+        if arc_title[0] != 'E':
+            chapter_path = 'Arc %02d - %s.rtf' % (arc_number, arc_title.split(':')[1].strip())
+        else:
+            chapter_path = '%s.rtf' % arc_title.replace(': ', ' - ')
         if chapter_position == 1:
             remove_file(chapter_path)
         chapter_file = open(chapter_path, 'a')
