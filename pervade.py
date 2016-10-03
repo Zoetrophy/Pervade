@@ -465,7 +465,7 @@ def main():
                 selected_chapters = sorted([chapter for chapter in set(args.chapter) if chapter in all_chapters])
                 if any(chapter not in all_chapters for chapter in set(args.chapter)):
                     print('ERROR: selected chapters %s do not exist; automatically deselected' %
-                          sorted([arc for arc in set(args.arc) if arc not in all_arcs]))
+                          sorted([chapter for chapter in set(args.chapter) if chapter not in all_chapters]))
                 if selected_chapters == []:
                     print('ERROR: no valid chapters selected; automatically skipping arc')
             else:
