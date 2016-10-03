@@ -20,7 +20,10 @@ Files can be converted faithfully to PDF with the command: `abiword --to=pdf *.r
 
 ###TODO:
 
-1. Implement uniform chapter naming for Interludes.
+* Implement uniform chapter naming for Interludes
+* Implement more advanced formatting
+* Implement a system for dynamically adding spaces only where necessary in the RTF markup
+* Expand support to more document viewers (only AbiWord is currently intentionally supported)
 
 ***
 
