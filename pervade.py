@@ -33,6 +33,8 @@ arg_parser.add_argument('-j', '--join', action='store_true',
                         help='join all files of the same arc')
 arg_parser.add_argument('-s', '--seconds', metavar='SECONDS', type=float,
                         help='time to wait after page load in seconds (automatically fuzzed)')
+arg_parser.add_argument('-f', '--faithful', action='store_true',
+                        help='use original chapter titles instead of reformatted ones')
 arg_parser.add_argument('-v', '--verbose', action='store_true',
                         help='display more verbose output for debugging')
 arg_parser.add_argument('-x', '--debug', action='store_true',
@@ -113,7 +115,13 @@ class RTF:
     ]
     special_substitutions = [
         [[r'<span style="text-decoration:underline;">', r'</span>'], [r'\\ul ', r'\\ul0 ']],
-        [[r'<span style="color:#ffffff;">', r'</span>'], [r'', r'']]
+        [[r'<span style="color:#ffffff;">', r'</span>'], [r'', r'']],
+        [[r'<span style="font-style:inherit;line-height:1.625;">', r'</span>'], [r'', r'']],
+        [[r'<span style="font-size:15px;font-style:inherit;line-height:1.625;">', r'</span>'], [r'', r'']],
+        [[r'<span style="line-height:15px;">', r'</span>'], [r'', r'']],
+        [[r'<span style="color:#333333;font-style:normal;line-height:24px;">', r'</span>'], [r'', r'']],
+        [[r'<span id=".+?">', r'</span>'], [r'', r'']]
+        #[[r'<span.*?>', r'</span>'], [r'', r'']]
     ]
     author_name = 'JOHN McCRAE'
     author_nickname = 'WILDBOW'
@@ -270,7 +278,15 @@ def get_index():
                     chapter_number += 1
 
                 index[arc_number][chapter_number] = {}
-                index[arc_number][chapter_number]['chapter'] = chapter_text
+                if not args.faithful:
+                    chapter_text_part = chapter_text.replace('(Donation ', '(')
+                    index[arc_number][chapter_number]['chapter'] = re.sub(
+                        r'Interlude.+? ',
+                        r'Interlude; ',
+                        chapter_text_part
+                    )
+                else:
+                    index[arc_number][chapter_number]['chapter'] = chapter_text
                 if chapter_url[0:4] == 'http':
                     index[arc_number][chapter_number]['url'] = iri_to_uri(chapter_url)
                 else:
@@ -281,14 +297,9 @@ def get_index():
 
 def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_title, chapter_position):
     def rich_textify(input_string, typeface=0, font_size=0, alignment='j', indent=1, space_after=False):
-        output_string = input_string
+        output_string = input_string.replace('\n', '')
         output_string_prefix = RTF.prefix
         output_string_suffix = RTF.suffix
-
-        for substitution in RTF.substitutions:
-            output_string = re.sub(substitution[0], substitution[1], output_string)
-        for substitution in RTF.character_substitutions:
-            output_string = re.sub(substitution[0], substitution[1], output_string)
 
         for substitution in RTF.special_substitutions:
             output_string = re.sub(
@@ -296,6 +307,15 @@ def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_titl
                 r'%s\1%s' % (substitution[1][0], substitution[1][1]),
                 output_string
             )
+
+        if '<span' in output_string:
+            print(re.findall(r'(<span.*?>.*?</span>)', output_string))
+            print(output_string)
+
+        for substitution in RTF.substitutions:
+            output_string = re.sub(substitution[0], substitution[1], output_string)
+        for substitution in RTF.character_substitutions:
+            output_string = re.sub(substitution[0], substitution[1], output_string)
 
         if re.sub(r'[^a-z]', r'', output_string.lower()) in ['lastchapter',
                                                              'nextchapter',
@@ -311,7 +331,7 @@ def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_titl
 
         output_string = ' ' * (output_string[0] != '\\') + output_string
 
-        css = re.search(r'p dir=".+?" style="(.+?)"', input_string)
+        css = re.search(r'<p.+?style="(.+?)".*?>', input_string)
         if css is None:
             output_string_prefix += ''.join([
                 '\\q' + alignment,
