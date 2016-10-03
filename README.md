@@ -1,5 +1,5 @@
 #Pervade
-Automatic e-book formatter for Wildbow's online serial, Worm. Currently, output format targets Abiword and as such may not appear correctly in other viewing applications.
+Automatic e-book formatter for Wildbow's online serial, Worm. Currently, output format targets AbiWord and as such may not appear correctly in other viewing applications.
 
 ###Basic usage:
 
