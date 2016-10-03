@@ -31,7 +31,7 @@ arg_parser.add_argument('-d', '--download', action='store_true',
                         help='explicitly set to download mode')
 arg_parser.add_argument('-j', '--join', action='store_true',
                         help='join all files of the same arc')
-arg_parser.add_argument('-s', '--seconds', metavar='SECONDS', type=float,
+arg_parser.add_argument('-s', '--seconds', metavar='SECONDS', type=int,
                         help='time to wait after page load in seconds (automatically fuzzed)')
 arg_parser.add_argument('-f', '--faithful', action='store_true',
                         help='use original chapter titles instead of reformatted ones')
@@ -50,12 +50,15 @@ class Constant:
 
 class RTF:
     header = '{\\rtf1\\deflang1033\\plain\\fs28\\widowctrl\\hyphauto\\ftnbj' \
-             '\\margt2160\\margb2160\\margl1440\\margr1440 ' \
+             '\\margt1620\\margb1600\\margl1440\\margr1440 ' \
              '{\\fonttbl {\\f0 Times New Roman;}{\\f1 Arial;}{\\f2 Courier;}{\\f3 Arial;}}\n'
+    cover_image_file = 'spider_eyes.txt'
     prefix = '{\\pard\\sl360\\slmult1'
     suffix = '\\par}\n'
     indent = 360
     padding = 1080
+    header_font_size = 26
+    footer_font_size = 26
     substitutions = [
         [r'(<em>)|(<i>)', r'\\i '],
         [r'(</em>)|(</i>)', r'\\i0 '],
@@ -387,43 +390,52 @@ def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_titl
         chapter_file.write('{\\header\\pard\\par}\n')
         chapter_file.write('{\\footer\\pard\\par}\n')
         chapter_file.write('\\sectd')
-        chapter_file.write('{\\pard\\sa180\\qc\\fs36\\par}\n')
-        chapter_file.write('{\\pard\\sa180\\qc\\fs72\\f1\\b %s\\b0\\par}\n' % re.sub(  # Prints BIG title
+        chapter_file.write('{\\pard\\sa0\\qc\\fs24\\line\\par}\n')
+        chapter_file.write('{\\pard\\sa0\\qc\\fs72\\f1\\b %s\\b0\\par}\n' % re.sub(  # Prints BIG title
             r'(\(.*?\))',
             r'',
             arc_title.upper()
         ))
-        chapter_file.write('{\\pard\\sa180\\qc\\fs36\\f1%s\\par}\n' % ('\\line' * 20))  # Prints space
+        chapter_file.write('{\\pard\\sa0\\qc\\fs24\\f1%s\\par}\n' % ('\\line' * 6))  # Prints space
+        #chapter_file.write('{\\pard\\sa0\\qc\\fs792\\f1 W\\par}\n')  # Prints decorative W?
+        cover_image_file = open(RTF.cover_image_file, 'r')
+        cover_image_lines = cover_image_file.readlines()
+        cover_image_file.close()
+        chapter_file.write('{\\pard\\qc')
+        for line in cover_image_lines:
+            chapter_file.write(line)
+        chapter_file.write('\\par}\n')
+        chapter_file.write('{\\pard\\sa0\\qc\\fs24\\f1%s\\par}\n' % ('\\line' * 5))  # Prints space
         chapter_file.write('{\\pard\\sa120\\qc\\fs42\\f1\\b %s\\b0\\par}\n' % RTF.author_name)  # Prints author name
         chapter_file.write('{\\pard\\sa0\\qc\\fs28\\f1\\b %s\\b0\\par}\n' % RTF.author_nickname)  # Prints author nick
-        chapter_file.write('{\\pard\\page\\par}')
+        chapter_file.write('{\\pard\\sa0\\qc\\fs24\\page\\par}')
         chapter_file.write('{\\pard\\qc\\fs24\\f1 This page left intentionally blank.\\par}\n')
 
     # Set headers to current chapter + arc
     chapter_title_parts = [part.strip() for part in re.split(r'\(|;|:|\)', chapter_title) if part != '']
-    chapter_file.write('{\\headerl\\pard\\ql\\fs28\\f1\\line\\line %s\\par}\n' % (
+    chapter_file.write('{\\headerl\\pard\\ql\\fs28\\f1\\line %s\\par}\n' % (
         arc_title.upper()
     ))
     if len(chapter_title_parts) == 1:
-        chapter_file.write('{\\headerr\\pard\\qr\\fs28\\f1\\line\\line %s\\par}\n' % (
+        chapter_file.write('{\\headerr\\pard\\qr\\fs%d\\f1\\line %s\\par}\n' % (RTF.header_font_size, (
             ('Chapter %s' % chapter_title_parts[0]).upper()
-        ))
+        )))
     elif len(chapter_title_parts) == 2:
-        chapter_file.write('{\\headerr\\pard\\qr\\fs28\\f1\\line\\line %s\\par}\n' % (
+        chapter_file.write('{\\headerr\\pard\\qr\\fs%d\\f1\\line %s\\par}\n' % (RTF.header_font_size, (
             ('%s (%s)' % (chapter_title_parts[0], chapter_title_parts[1])).upper()
-        ))
+        )))
     else:
-        chapter_file.write('{\\headerr\\pard\\qr\\fs28\\f1\\line\\line %s\\par}\n' % (
+        chapter_file.write('{\\headerr\\pard\\qr\\fs%d\\f1\\line %s\\par}\n' % (RTF.header_font_size, (
             ('%s (%s; %s)' % (
                 chapter_title_parts[0],
                 chapter_title_parts[1].replace('Donation ', ''),
                 chapter_title_parts[2]
             )).upper()
-        ))
+        )))
     chapter_file.write('{\\headerf\\pard\\qc\\par}\n')
-    chapter_file.write('{\\footerl\\pard\\ql\\fs28\\line\\chpgn\\par}\n')
-    chapter_file.write('{\\footerr\\pard\\qr\\fs28\\line\\chpgn\\par}\n')
-    chapter_file.write('{\\footerf\\pard\\qc\\fs28\\line\\par}\n')
+    chapter_file.write('{\\footerl\\pard\\ql\\fs%d\\line\\chpgn\\par}\n' % RTF.footer_font_size)
+    chapter_file.write('{\\footerr\\pard\\qr\\fs%d\\line\\chpgn\\par}\n' % RTF.footer_font_size)
+    chapter_file.write('{\\footerf\\pard\\qc\\fs%d\\par}\n' % RTF.footer_font_size)
 
     # Start new sect(ion), print chapter heading
     chapter_file.write('\\sect\\sectd\n')
@@ -516,7 +528,7 @@ def main():
                 if any(chapter not in all_chapters for chapter in set(args.chapter)):
                     print('ERROR: selected chapters %s do not exist; automatically deselected' %
                           sorted([chapter for chapter in set(args.chapter) if chapter not in all_chapters]))
-                if selected_chapters == []:
+                if selected_chapters == []:  # Even if your IDE tells you to change this line, DON'T DO IT.
                     print('ERROR: no valid chapters selected; automatically skipping arc')
             else:
                 selected_chapters = all_chapters
