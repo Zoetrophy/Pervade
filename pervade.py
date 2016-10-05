@@ -6,6 +6,7 @@
 """
 RTF documentation:
     https://www.safaribooksonline.com/library/view/rtf-pocket-guide/9781449302047/ch01.html
+    https://www.safaribooksonline.com/library/view/rtf-pocket-guide/9781449302047/ch04.html
     http://www.biblioscape.com/rtf15_spec.htm
     https://msdn.microsoft.com/en-us/library/aa140277(office.10).aspx
 """
@@ -48,17 +49,63 @@ class Constant:
                         '(KHTML, like Gecko) Chrome/9.0.597.19 Safari/534.13'
 
 
-class RTF:
-    header = '{\\rtf1\\deflang1033\\plain\\fs28\\widowctrl\\hyphauto\\ftnbj' \
-             '\\margt1620\\margb1600\\margl1440\\margr1440 ' \
-             '{\\fonttbl {\\f0 Times New Roman;}{\\f1 Arial;}{\\f2 Courier;}{\\f3 Arial;}}\n'
-    cover_image_file = 'spider_eyes.txt'
-    prefix = '{\\pard\\sl360\\slmult1'
-    suffix = '\\par}\n'
+class Typesetting:
+    font = {  # Use only fonts present on your machine.
+        'primary': {
+            'typeface': 'Times New Roman',
+            'size': 28
+        },
+        'header': {
+            'typeface': 'Helvetica',
+            'size': 26
+        },
+        'footer': {
+            'typeface': 'Helvetica',
+            'size': 26
+        },
+        'chapter_title': {
+            'typeface': 'Courier',
+            'size': 56
+        },
+        'chapter_subtitle': {
+            'typeface': 'Courier',
+            'size': 28
+        },
+        'chapter_end': {
+            'typeface': 'Courier',
+            'size': 28
+        },
+        'cover_title': {
+            'typeface': 'Helvetica',
+            'size': 72
+        },
+        'cover_author': {
+            'typeface': 'Courier',
+            'size': 42
+        },
+        'cover_other': {
+            'typeface': 'Arial',
+            'size': 28
+        }
+    }
+    page_margins = {
+        'top': 1620,
+        'bottom': 1600,
+        'left': 1440,
+        'right': 1400
+    }
     indent = 360
     padding = 1080
-    header_font_size = 26
-    footer_font_size = 26
+
+
+class RTF:
+    file_header = '{\\rtf1\\deflang1033\\plain\\fs%d\\widowctrl\\hyphauto\\ftnbj\n' % (
+        Typesetting.font['primary']['size']
+    )
+    cover_image_file = 'spider_eyes.txt'
+    inner_cover_file = 'inner_cover.txt'
+    line_prefix = '{\\pard\\sl360\\slmult1'
+    line_suffix = '\\par}\n'
     substitutions = [
         [r'(<em>)|(<i>)', r'\\i '],
         [r'(</em>)|(</i>)', r'\\i0 '],
@@ -124,10 +171,8 @@ class RTF:
         [[r'<span style="line-height:15px;">', r'</span>'], [r'', r'']],
         [[r'<span style="color:#333333;font-style:normal;line-height:24px;">', r'</span>'], [r'', r'']],
         [[r'<span id=".+?">', r'</span>'], [r'', r'']]
-        #[[r'<span.*?>', r'</span>'], [r'', r'']]
+        #[[r'<span.*?>', r'</span>'], [r'', r'']]  # <span> catch-all
     ]
-    author_name = 'JOHN McCRAE'
-    author_nickname = 'WILDBOW'
     per_chapter_formatting = {
         1: {},
         2: {},
@@ -202,21 +247,21 @@ def iri_to_uri(iri, encoding='utf-8'):
     scheme, authority, path, query, frag = urlparse.urlsplit(iri)
     scheme = scheme.encode(encoding)
     if ":" in authority:
-        host, port = authority.split(":", 1)
-        authority = host.encode('idna') + ":%s" % port
+        host, port = authority.split(':', 1)
+        authority = host.encode('idna') + ':%s' % port
     else:
         authority = authority.encode(encoding)
     path = urlparse.quote(
-      path.encode(encoding),
-      safe="/;%[]=:$&()+,!?*@'~"
+        path.encode(encoding),
+        safe='/;%[]=:$&()+,!?*@\'~'
     )
     query = urlparse.quote(
-      query.encode(encoding),
-      safe="/;%[]=:$&()+,!?*@'~"
+        query.encode(encoding),
+        safe='/;%[]=:$&()+,!?*@\'~'
     )
     frag = urlparse.quote(
-      frag.encode(encoding),
-      safe="/;%[]=:$&()+,!?*@'~"
+        frag.encode(encoding),
+        safe='/;%[]=:$&()+,!?*@\'~'
     )
     return urlparse.urlunsplit((
         scheme.decode('utf-8'),
@@ -299,10 +344,74 @@ def get_index():
 
 
 def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_title, chapter_position):
+    # Generate complete file header string
+    def generate_file_header():
+        file_header_string = ''
+        file_header_string += RTF.file_header
+        file_header_string += '\\margt%d' % Typesetting.page_margins['top']
+        file_header_string += '\\margb%d' % Typesetting.page_margins['bottom']
+        file_header_string += '\\margl%d' % Typesetting.page_margins['left']
+        file_header_string += '\\margr%d' % Typesetting.page_margins['right']
+        file_header_string += '\n{\\fonttbl '
+        file_header_string += '{\\f0 %s;}' % Typesetting.font['primary']['typeface']
+        file_header_string += '{\\f1 %s;}' % Typesetting.font['header']['typeface']
+        file_header_string += '{\\f2 %s;}' % Typesetting.font['footer']['typeface']
+        file_header_string += '{\\f3 %s;}' % Typesetting.font['chapter_title']['typeface']
+        file_header_string += '{\\f4 %s;}' % Typesetting.font['chapter_subtitle']['typeface']
+        file_header_string += '{\\f5 %s;}' % Typesetting.font['chapter_end']['typeface']
+        file_header_string += '{\\f6 %s;}' % Typesetting.font['cover_title']['typeface']
+        file_header_string += '{\\f7 %s;}' % Typesetting.font['cover_author']['typeface']
+        file_header_string += '{\\f8 %s;}' % Typesetting.font['cover_other']['typeface']
+        file_header_string += '}\n'
+
+        return file_header_string
+
+    # Generate cover page string
+    def generate_cover_page():
+        # Empty header + footer is a hack to "fix" a bug in AbiWord. Please do not remove.
+        cover_string = ''
+        cover_string += '{\\header\\pard\\par}\n'
+        cover_string += '{\\footer\\pard\\par}\n'
+
+        cover_string += '\\sectd'
+        cover_string += '{\\pard\\sa0\\qc\\fs24\\line\\par}\n'
+        cover_string += '{\\pard\\sa0\\qc\\f6\\fs%d\\b %s\\b0\\par}\n' % (  # Prints title
+            Typesetting.font['cover_title']['size'],
+            re.sub(r'(\(.*?\))', r'', arc_title.upper())
+        )
+        cover_string += '{\\pard\\sa0\\qc\\fs24%s\\par}\n' % ('\\line' * 5)  # Adds space
+
+        # Adds cover art
+        cover_image_file = open(RTF.cover_image_file, 'r')
+        cover_image_lines = cover_image_file.readlines()
+        cover_image_file.close()
+        cover_string += '{\\pard\\qc'
+        for line in cover_image_lines:
+            cover_string += line
+        cover_string += '\\par}\n'
+
+        cover_string += '{\\pard\\sa0\\qc\\fs24%s\\par}\n' % ('\\line' * 5)  # Adds space
+        cover_string += '{\\pard\\sa120\\qc\\f7\\fs%d\\b JOHN McCRAE\\b0\\par}\n' % (  # Prints author name
+            Typesetting.font['cover_author']['size']
+        )
+        cover_string += '{\\pard\\sa0\\qc\\f7\\fs28\\b WILDBOW\\b0\\page\\par}\n'  # Prints author nickname
+
+        # Prints inner cover
+        inner_cover_file = open(RTF.inner_cover_file, 'r')
+        inner_cover_lines = inner_cover_file.readlines()
+        inner_cover_file.close()
+        inner_cover_lines = [line.strip() for line in inner_cover_lines]
+        for line in inner_cover_lines:
+            #cover_string += '{\\pard\\qc\\f0\\fs24 %s\\par}\n' % line
+            cover_string += '{\\pard\\qc\\f0\\fs24 %s\\par}\n' % line
+
+        return cover_string
+
+    # Convert HTML to RTF
     def rich_textify(input_string, typeface=0, font_size=0, alignment='j', indent=1, space_after=False):
-        output_string = input_string.replace('\n', '')
-        output_string_prefix = RTF.prefix
-        output_string_suffix = RTF.suffix
+        output_string = input_string.replace('\n', '')  # Removes newlines from HTML, which would mess up some regex's
+        output_string_prefix = RTF.line_prefix
+        output_string_suffix = RTF.line_suffix
 
         for substitution in RTF.special_substitutions:
             output_string = re.sub(
@@ -312,8 +421,9 @@ def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_titl
             )
 
         if '<span' in output_string:
-            print(re.findall(r'(<span.*?>.*?</span>)', output_string))
-            print(output_string)
+            print('ERROR: unprocessed <span>: %s' % re.findall(r'(<span.*?>.*?</span>)', output_string))
+            if args.verbose or args.debug:
+                print('DEBUG: complete line: %s' % output_string)
 
         for substitution in RTF.substitutions:
             output_string = re.sub(substitution[0], substitution[1], output_string)
@@ -329,17 +439,15 @@ def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_titl
             return ''
 
         for character_code in re.findall(r'&#(.+?);', output_string):
-            print('ERROR: unknown character code encountered <%s>' % character_code)
-            print('  %s' % input_string)
+            print('ERROR: unprocessed character code encountered: %s' % character_code)
+            if args.verbose or args.debug:
+                print('DEBUG: complete line:' % output_string)
 
         output_string = ' ' * (output_string[0] != '\\') + output_string
 
         css = re.search(r'<p.+?style="(.+?)".*?>', input_string)
         if css is None:
-            output_string_prefix += ''.join([
-                '\\q' + alignment,
-                ('\\fi%d' % RTF.indent) * indent,
-            ])
+            output_string_prefix += ('\\q%s' % alignment) + ('\\fi%d' % Typesetting.indent) * indent
         else:
             css_dict = {}
             for css_string in re.split(r';', css.group(1)):
@@ -358,24 +466,26 @@ def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_titl
                 else:
                     output_string_prefix += '\\qc'
             if 'padding-left' in css_dict.keys():
-                output_string_prefix += '\\li%d\\ri%d' % (RTF.padding, RTF.padding)
+                output_string_prefix += '\\li%d\\ri%d' % (Typesetting.padding, Typesetting.padding)
 
-        output_string_prefix += ''.join([
-            ('\\f%d' % typeface) * (typeface != 0),
-            ('\\fs%d' % font_size) * (font_size != 0),
-            ('\\sa%d' % space_after) * (space_after != 0)
-        ])
+        output_string_prefix += ('\\f%d' % typeface) * (typeface != 0) + ('\\fs%d' % font_size) * (font_size != 0) + \
+                                ('\\sa%d' % space_after) * (space_after != 0)
 
         return output_string_prefix + output_string + output_string_suffix
 
-    chapter_tree = get_page(chapter_url)
+    chapter_tree = get_page(chapter_url)  # Downloads chapter page
     chapter_lines = chapter_tree.xpath('//*[@class="entry-content"]//p')
     if not args.join:
+        # If the program IS NOT set to download all chapters of an arc as a joined file, save them in the format:
+        # "##-## Chapter Title.rtf"
         chapter_path = '%02d-%02d %s.rtf' % (arc_number, chapter_number, chapter_title)
         chapter_file = open(chapter_path, 'w')
-        chapter_file.write(RTF.header)
+        # Writes the file header; contains stuff like the margins and font table
+        chapter_file.write(generate_file_header())
     else:
-        if arc_title[0] != 'E':
+        # If the program IS set to download all chapters of an arc as a joined file, save them in the format:
+        # "Arc ## - Arc Title.rtf"
+        if arc_title[0] != 'E':  # Renames numbered arc files (e.g. "Arc 01..." instead of "Arc 1...") for sorting
             chapter_path = 'Arc %02d - %s.rtf' % (arc_number, arc_title.split(':')[1].strip())
         else:
             chapter_path = '%s.rtf' % arc_title.replace(': ', ' - ')
@@ -383,74 +493,65 @@ def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_titl
             remove_file(chapter_path)
         chapter_file = open(chapter_path, 'a')
         if chapter_position == 1:
-            chapter_file.write(RTF.header)
+            # If it's working on the first chapter of an arc, then it writes the file header
+            chapter_file.write(generate_file_header())
 
-    if chapter_position == 1:
-        # Empty header + footer is a hack to "fix" a bug. Please do not remove.
-        chapter_file.write('{\\header\\pard\\par}\n')
-        chapter_file.write('{\\footer\\pard\\par}\n')
-        chapter_file.write('\\sectd')
-        chapter_file.write('{\\pard\\sa0\\qc\\fs24\\line\\par}\n')
-        chapter_file.write('{\\pard\\sa0\\qc\\fs72\\f1\\b %s\\b0\\par}\n' % re.sub(  # Prints BIG title
-            r'(\(.*?\))',
-            r'',
-            arc_title.upper()
-        ))
-        chapter_file.write('{\\pard\\sa0\\qc\\fs24\\f1%s\\par}\n' % ('\\line' * 6))  # Prints space
-        #chapter_file.write('{\\pard\\sa0\\qc\\fs792\\f1 W\\par}\n')  # Prints decorative W?
-        cover_image_file = open(RTF.cover_image_file, 'r')
-        cover_image_lines = cover_image_file.readlines()
-        cover_image_file.close()
-        chapter_file.write('{\\pard\\qc')
-        for line in cover_image_lines:
-            chapter_file.write(line)
-        chapter_file.write('\\par}\n')
-        chapter_file.write('{\\pard\\sa0\\qc\\fs24\\f1%s\\par}\n' % ('\\line' * 5))  # Prints space
-        chapter_file.write('{\\pard\\sa120\\qc\\fs42\\f1\\b %s\\b0\\par}\n' % RTF.author_name)  # Prints author name
-        chapter_file.write('{\\pard\\sa0\\qc\\fs28\\f1\\b %s\\b0\\par}\n' % RTF.author_nickname)  # Prints author nick
-        chapter_file.write('{\\pard\\sa0\\qc\\fs24\\page\\par}')
-        chapter_file.write('{\\pard\\qc\\fs24\\f1 This page left intentionally blank.\\par}\n')
+    if chapter_position == 1:  # Cover page stuff
+        chapter_file.write(generate_cover_page())
 
-    # Set headers to current chapter + arc
+    # Splits the chapter title into parts for various processing
     chapter_title_parts = [part.strip() for part in re.split(r'\(|;|:|\)', chapter_title) if part != '']
-    chapter_file.write('{\\headerl\\pard\\ql\\fs28\\f1\\line %s\\par}\n' % (
+
+    # Set headers to current chapter + arc; resets the footers for the new \sect(ion)
+    chapter_file.write('{\\headerl\\pard\\ql\\f1\\fs%d\\line %s\\par}\n' % (
+        Typesetting.font['header']['size'],
         arc_title.upper()
     ))
     if len(chapter_title_parts) == 1:
-        chapter_file.write('{\\headerr\\pard\\qr\\fs%d\\f1\\line %s\\par}\n' % (RTF.header_font_size, (
+        chapter_file.write('{\\headerr\\pard\\qr\\f1\\fs%d\\line %s\\par}\n' % (Typesetting.font['header']['size'], (
             ('Chapter %s' % chapter_title_parts[0]).upper()
         )))
     elif len(chapter_title_parts) == 2:
-        chapter_file.write('{\\headerr\\pard\\qr\\fs%d\\f1\\line %s\\par}\n' % (RTF.header_font_size, (
+        chapter_file.write('{\\headerr\\pard\\qr\\f1\\fs%d\\line %s\\par}\n' % (Typesetting.font['header']['size'], (
             ('%s (%s)' % (chapter_title_parts[0], chapter_title_parts[1])).upper()
         )))
     else:
-        chapter_file.write('{\\headerr\\pard\\qr\\fs%d\\f1\\line %s\\par}\n' % (RTF.header_font_size, (
+        chapter_file.write('{\\headerr\\pard\\qr\\f1\\fs%d\\line %s\\par}\n' % (Typesetting.font['header']['size'], (
             ('%s (%s; %s)' % (
                 chapter_title_parts[0],
                 chapter_title_parts[1].replace('Donation ', ''),
                 chapter_title_parts[2]
             )).upper()
         )))
-    chapter_file.write('{\\headerf\\pard\\qc\\par}\n')
-    chapter_file.write('{\\footerl\\pard\\ql\\fs%d\\line\\chpgn\\par}\n' % RTF.footer_font_size)
-    chapter_file.write('{\\footerr\\pard\\qr\\fs%d\\line\\chpgn\\par}\n' % RTF.footer_font_size)
-    chapter_file.write('{\\footerf\\pard\\qc\\fs%d\\par}\n' % RTF.footer_font_size)
+    chapter_file.write('{\\headerf\\pard\\par}\n')
+    chapter_file.write('{\\footerl\\pard\\ql\\f2\\fs%d\\line\\chpgn\\par}\n' % Typesetting.font['footer']['size'])
+    chapter_file.write('{\\footerr\\pard\\qr\\f2\\fs%d\\line\\chpgn\\par}\n' % Typesetting.font['footer']['size'])
+    chapter_file.write('{\\footerf\\pard\\par}\n')
 
-    # Start new sect(ion), print chapter heading
+    # Start new \sect(ion), print chapter heading
     chapter_file.write('\\sect\\sectd\n')
     chapter_file.write('{\\pard\\page\\par}\n')
     if len(chapter_title_parts) == 1:
-        chapter_file.write('{\\pard\\sa480\\qc\\fs56\\f2\\b %s\\b0\\par}\n' % chapter_title_parts[0])
-    elif len(chapter_title_parts) == 2:
-        chapter_file.write('{\\pard\\sa120\\qc\\fs56\\f2\\b %s\\b0\\par}\n' % chapter_title_parts[0])
-        chapter_file.write('{\\pard\\sa480\\qc\\fs28\\f2\\b %s\\b0\\par}\n' % chapter_title_parts[1])
-    else:
-        chapter_file.write('{\\pard\\sa120\\qc\\fs56\\f2\\b %s\\b0\\par}\n' % chapter_title_parts[0])
-        chapter_file.write('{\\pard\\sa480\\qc\\fs28\\f2\\b %s; %s\\b0\\par}\n' % (
-            chapter_title_parts[1],
-            chapter_title_parts[2]
+        chapter_file.write('{\\pard\\sa480\\qc\\f3\\fs%d\\b %s\\b0\\par}\n' % (
+            Typesetting.font['chapter_title']['size'],
+            chapter_title_parts[0]
         ))
+    else:
+        chapter_file.write('{\\pard\\sa120\\qc\\f3\\fs%d\\b %s\\b0\\par}\n' % (
+            Typesetting.font['chapter_title']['size'],
+            chapter_title_parts[0]
+        ))
+        if len(chapter_title_parts) == 2:
+            chapter_file.write('{\\pard\\sa480\\qc\\f3\\fs%d\\b %s\\b0\\par}\n' % (
+                Typesetting.font['chapter_subtitle']['size'],
+                chapter_title_parts[1]
+            ))
+        else:
+            chapter_file.write('{\\pard\\sa480\\qc\\f3\\fs%d\\b %s; %s\\b0\\par}\n' % (
+                Typesetting.font['chapter_subtitle']['size'],
+                chapter_title_parts[1],
+                chapter_title_parts[2]
+            ))
 
     # Convert HTML to RTF
     for raw_line in chapter_lines:
@@ -476,12 +577,12 @@ def get_chapter(chapter_url, chapter_number, chapter_title, arc_number, arc_titl
             arc_identifier = 'ARC ' + str(arc_number)
         else:
             arc_identifier = 'WORM'
-        # "Empty header + footer is a hack to "fix" a bug. Please do not remove." Redux
+        # "Empty header + footer is a hack to "fix" a bug in AbiWord. Please do not remove." Redux
         chapter_file.write('{\\header\\pard\\par}\n')
         chapter_file.write('{\\footer\\pard\\par}\n')
         chapter_file.write('\\sect\\sectd')
         chapter_file.write('{\\pard\\page\\par}\n')
-        chapter_file.write('{\\pard\\qc\\f2\\b END OF %s\\b0\\par}\n}' % arc_identifier)
+        chapter_file.write('{\\pard\\qc\\f5\\b END OF %s\\b0\\par}\n}' % arc_identifier)
 
     chapter_file.close()
 
